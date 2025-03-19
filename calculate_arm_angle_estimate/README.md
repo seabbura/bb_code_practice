@@ -8,7 +8,7 @@
 本ファイルでは、以下の流れで推定値の計算を実施しています。
 - MiLB（Minor League）のStatcastデータを取得
     - 例として、MiLBの日付を指定し、指定期間のStatcastデータを取得しています。
-    - フォルダextract_savant_data内にあるsavant_extract_milb_data.ipynbと内容は同じです。
+    - フォルダ[extract_savant_data](../extract_savant_data/)内にある[savant_extract_milb_data.ipynb](../extract_savant_data/savant_extract_milb_data.ipynb)と内容は同じです。
 - 各選手の身長の計算
     - 取得した選手のコードからStats APIを参照し、各選手の身長を取得します。
         - 身長はinch単位に変換しています。
