@@ -24,6 +24,6 @@
 
 ## 言語・ファイル形式等
 - 言語はすべてPythonで記述しています。
-- ファイルはすべてJupiter Notebook形式（.ipynb）形式で作成しています。
+- ファイルはすべてJupyter Notebook形式（.ipynb）形式で作成しています。
     - Google Colab等、Jupiter Notebookをご利用可能であれば、順次コードを実行するだけで結果を得ることができます（検証済）。
     - .pyファイルでご利用の場合は、適宜修正してお使いください。

@@ -31,8 +31,8 @@
 
 ## 利用言語・環境等
 - 言語はPythonで記述しています。
-- ファイルはJupiter Notebook形式（.ipynb）にて保存しています。
+- ファイルはJupyter Notebook形式（.ipynb）にて保存しています。
 
 ## 使い方
-- Google Colab等、Jupiter Notebookをご利用可能であれば、順次コードを実行するだけで結果を得ることができます（検証済）。
+- Google Colab等、Jupyter Notebookをご利用可能であれば、順次コードを実行するだけで結果を得ることができます（検証済）。
 - .pyファイルとして実行される際は、必要に応じて修正の上ご利用ください。
