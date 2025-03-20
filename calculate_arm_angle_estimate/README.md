@@ -1,8 +1,9 @@
-# Savant Arm Angle Estimate
+# Estimate Arm Angle from Statcast Data
 
 ## 概要
 - Statcastで取得できるデータから、リリース角度（Arm Angle）の推定値を計算しています。
-- SavantのMajor League Searchから取得可能な値ですが、Minor League SearchおよびGamefeedには値がありません。このため推定を行うものです。
+- 計算方法は[こちらのサイト](https://web.archive.org/web/20230123183755/https://www.rundownbaseball.com/project/calculating-arm-angles-using-statcast-data/#:~:text=rubber%20at%20extension,aka%20shoulder%29%20is)の内容に準拠しています。
+- Arm AngleはSavantのMajor League Searchから取得可能ですが、Minor League SearchおよびGamefeedには値がありません。このため推定を行うものです。
 
 ## 計算内容
 本ファイルでは、以下の流れで推定値の計算を実施しています。

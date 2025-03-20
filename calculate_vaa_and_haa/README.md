@@ -1,21 +1,21 @@
-# Estimate Observed Movement from Statcast Data
+# Estimage VAA & HAA from Statcast Data
 
 ## 概要
-- Statcastで取得できるデータから、ボールの動作角度（Observed Movement Angle）・回転効率（Spin Efficiency）の推定値を計算しています。
-- 計算方法は[こちらのサイト](https://www.kaggle.com/code/s903124/observed-vs-inferred-spin-axis)の内容に準拠しています。
-> [!WARNING]  
-> - 本方式で回転効率の推定値も取得できますが、実際のSavantデータと比較すると乖離が大きいこと、また1を超える値が出ることもあるため、利用は非推奨です。
+- Statcastで取得できるデータから、ボールのVAA（Vertical Approach Angle、垂直アプローチ角度）・HAA（Horizontal Approach Angle、水平アプローチ角度）の推定値を計算しています。
+- 計算内容は以下のサイトの内容に準拠しています。
+    - [VAA : A Visualized Primer on Vertical Approach Angle (VAA)](https://blogs.fangraphs.com/a-visualized-primer-on-vertical-approach-angle-vaa/s)
+    - [HAA : A Visual Primer on Horizontal Approach Angle (HAA)](https://blogs.fangraphs.com/a-visual-primer-on-horizontal-approach-angle-haa/)
 
 ## 計算内容
 本ファイルでは、以下の流れで推定値の計算を実施しています。
 ### 1. MLBのStatcastデータを取得
 - 例として、pybaseballを利用して、指定期間のStatcastデータを取得しています。
 - Statcastを使用しない方法（フォルダ[extract_savant_data](../extract_savant_data/)の内容）でも、計算に必要なデータを取得することは可能です。
-### 2. ボールの動作角度・回転効率の計算
-- 前述の計算方法に沿って、ボールの動作角度・回転効率のデータを計算・追加します。
+### 2. ボールのVAA・HAAの計算
+- 前述の計算方法に沿って、ボールのVAA・HAAを計算・追加します。
 - 追加されるデータは以下の通りです。
-    - phi : 動作角度
-    - spin_eff : 回転効率
+    - vaa : ボールのVAA
+    - haa : ボールのHAA
 
 ## 利用言語・環境等
 - 言語はPythonで記述しています。
