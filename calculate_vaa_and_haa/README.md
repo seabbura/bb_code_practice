@@ -1,4 +1,4 @@
-# Estimage VAA & HAA from Statcast Data
+# Estimate VAA & HAA from Statcast Data
 
 ## 概要
 - Statcastで取得できるデータから、ボールのVAA（Vertical Approach Angle、垂直アプローチ角度）・HAA（Horizontal Approach Angle、水平アプローチ角度）の推定値を計算しています。
