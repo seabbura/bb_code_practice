@@ -22,6 +22,14 @@
 ### calculate_arm_angle_estimate
 - Statcastのデータから、投手のリリース角度（Arm Angle）を計算しています。
 
+### fangraphs_npb_data
+- FanGraphsにあるNPBデータを抽出しています。
+- リーダーボードデータ、選手詳細データ、wOBA係数・球場補正値、チーム別wRC+の計算を行っています。
+
+### d3_savant_barchart
+- NPBの打撃成績データをD3.jsで可視化しています。
+- Baseball Savantっぽいパーセンタイルランキングチャートを表示しています。
+
 ## 言語・ファイル形式等
 - 言語はすべてPythonで記述しています。
 - ファイルはすべてJupyter Notebook形式（.ipynb）形式で作成しています。
