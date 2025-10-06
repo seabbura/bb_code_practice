@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Experiment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto Condensed', Arial, sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .description {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1.125rem;
+        }
+
+        .select-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        .select-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        select {
+            display: block;
+            width: 100%;
+            max-width: 28rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            font-family: 'Roboto Condensed', Arial, sans-serif;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        option {
+            cursor: pointer;
+        }
+
+        #chart {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Savant Like Chart Sample</h1>
+        <p class="description">Baseball Savant風チャートのサンプルです</p>
+
+        <!-- チーム選択プルダウン -->
+        <div class="select-wrapper">
+            <label for="team-select" class="select-label">チームを選択:</label>
+            <select id="team-select">
+                <option value="">読み込み中...</option>
+            </select>
+        </div>
+
+        <!-- 選手選択プルダウン -->
+        <div class="select-wrapper">
+            <label for="player-select" class="select-label">選手を選択:</label>
+            <select id="player-select">
+                <option value="">チームを選択してください</option>
+            </select>
+        </div>
+
+        <div id="chart"></div>
+    </div>
+
+    <script>
+        let allPlayersData = [];
+
+        // チャート描画関数
+        function drawChart(playerData) {
+            // 既存のチャートをクリア
+            d3.select('#chart').selectAll('*').remove();
+
+            // パーセンタイル指標を抽出
+            const percentileMetrics = [
+                { label: 'AVG', value: playerData['AVG'], percentile: playerData['AVG_percentile'] },
+                { label: 'OBP', value: playerData['OBP'], percentile: playerData['OBP_percentile'] },
+                { label: 'SLG', value: playerData['SLG'], percentile: playerData['SLG_percentile'] },
+                { label: 'OPS', value: playerData['OPS'], percentile: playerData['OPS_percentile'] },
+                { label: 'wOBA', value: playerData['wOBA'], percentile: playerData['wOBA_percentile'] },
+                { label: 'wRAA', value: playerData['wRAA'], percentile: playerData['wRAA_percentile'] },
+                { label: 'wRC', value: playerData['wRC'], percentile: playerData['wRC_percentile'] },
+                { label: 'wRC+', value: playerData['wRC+'], percentile: playerData['wRC+_percentile'] }
+            ];
+
+            // パーセンタイルを0-100スケールに変換
+            percentileMetrics.forEach(d => {
+                d.percentileValue = d.percentile * 100;
+            });
+
+            // グラデーションカラースケール（0, 25, 50, 75, 100でポイント指定）
+            const colorScale = d3.scaleLinear()
+                .domain([0, 25, 45, 50, 55, 75, 100])
+                .range(['#335aa1', '#7b96c1', '#b4ced2', '#b4ced2','#b4ced2','#c67d70', '#c31e24'])
+                .clamp(true);
+
+            function getColor(percentile) {
+                return colorScale(percentile);
+            }
+
+            // チャートの設定
+            const margin = { top: 80, right: 45, bottom: 20, left: 45 };
+            const width = 290 - margin.left - margin.right;
+            const height = 360 - margin.top - margin.bottom;
+            const barHeight = 20;
+
+            // SVG要素の作成
+            const svgRoot = d3.select('#chart')
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom);
+
+            // 斜線パターンの定義
+            const defs = svgRoot.append('defs');
+            const pattern = defs.append('pattern')
+                .attr('id', 'diagonal-stripe')
+                .attr('patternUnits', 'userSpaceOnUse')
+                .attr('width', 3)
+                .attr('height', 3)
+                .attr('patternTransform', 'rotate(45)');
+
+            pattern.append('rect')
+                .attr('width', 3)
+                .attr('height', 3)
+                .attr('fill', 'transparent');
+
+            pattern.append('line')
+                .attr('x1', 0)
+                .attr('y1', 0)
+                .attr('x2', 0)
+                .attr('y2', 3)
+                .attr('stroke', 'white')
+                .attr('stroke-width', 1.5)
+                .attr('opacity', 1);
+
+            const svg = svgRoot.append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // PA情報の判定（閾値を301に変更）
+            const hasLowPA = playerData.PA < 301;
+
+            // タイトル（選手名とPA数）
+            svg.append('text')
+                .attr('x', width / 2)
+                .attr('y', -50)
+                .attr('text-anchor', 'middle')
+                .style('font-family', 'Roboto Condensed, sans-serif')
+                .style('font-size', '18px')
+                .style('font-weight', 'bold')
+                .text(`${playerData.Name} (PA: ${playerData.PA})`);
+
+            // スケールの設定
+            const x = d3.scaleLinear()
+                .domain([0, 100])
+                .range([0, width]);
+
+            const y = d3.scaleBand()
+                .domain(percentileMetrics.map(d => d.label))
+                .range([0, percentileMetrics.length * (barHeight + 5)])
+                .padding(0.05);
+
+            const chartHeight = percentileMetrics.length * (barHeight + 5);
+
+            // 参照線（5%, 50%, 95%）- バーの後ろに配置
+            const referenceLines = [
+                { percentile: 5, label: 'POOR', color: '#335aa1' },
+                { percentile: 50, label: 'AVERAGE', color: '#b4ced2' },
+                { percentile: 95, label: 'GREAT', color: '#c51f25' }
+            ];
+
+            // 参照線のラベルと三角形（上部）
+            referenceLines.forEach(ref => {
+                const refGroup = svg.append('g')
+                    .attr('transform', `translate(${x(ref.percentile)}, -20)`);
+
+                // ラベル
+                refGroup.append('text')
+                    .attr('x', 0)
+                    .attr('y', 2)
+                    .attr('text-anchor', 'middle')
+                    .style('font-family', 'Roboto Condensed, sans-serif')
+                    .style('font-size', '12px')
+                    .style('fill', ref.color)
+                    .text(ref.label);
+
+                // 上向き三角形
+                refGroup.append('path')
+                    .attr('d', 'M -4,14 L 0,8 L 4,14 Z')
+                    .attr('fill', ref.color);
+            });
+
+            // 背景バー（グレー）
+            svg.selectAll('.bg-bar')
+                .data(percentileMetrics)
+                .enter()
+                .append('rect')
+                .attr('class', 'bg-bar')
+                .attr('x', 0)
+                .attr('y', d => y(d.label) + barHeight / 8 * 3)
+                .attr('width', width)
+                .attr('height', barHeight / 4)
+                .attr('fill', '#C6dddc');
+
+            // PA < 240の場合のバー高さと位置調整
+            const actualBarHeight = hasLowPA ? barHeight * 0.94 : barHeight;
+            const barYOffset = hasLowPA ? barHeight * 0.03 : 0;
+
+            // パーセンタイルバー背景
+            svg.selectAll('.percentile-bar')
+                .data(percentileMetrics)
+                .enter()
+                .append('rect')
+                .attr('class', 'percentile-bar-back')
+                .attr('x', 0)
+                .attr('y', d => y(d.label) + barYOffset)
+                .attr('width', d => x(d.percentileValue))
+                .attr('height', actualBarHeight)
+                .attr('fill', "#fff");
+
+            // パーセンタイルバー
+            svg.selectAll('.percentile-bar')
+                .data(percentileMetrics)
+                .enter()
+                .append('rect')
+                .attr('class', 'percentile-bar')
+                .attr('x', 0)
+                .attr('y', d => y(d.label) + barYOffset)
+                .attr('width', d => x(d.percentileValue))
+                .attr('height', actualBarHeight)
+                .attr('fill', d => getColor(d.percentileValue))
+                .attr('opacity', hasLowPA ? 0.4 : 0.98);
+
+            // PA < 240の場合、バーの上に斜線を追加
+            if (hasLowPA) {
+                svg.selectAll('.stripe-overlay')
+                    .data(percentileMetrics)
+                    .enter()
+                    .append('rect')
+                    .attr('class', 'stripe-overlay')
+                    .attr('x', 0)
+                    .attr('y', d => y(d.label) + barYOffset)
+                    .attr('width', d => x(d.percentileValue))
+                    .attr('height', actualBarHeight)
+                    .attr('fill', 'url(#diagonal-stripe)');
+            }
+
+            // ガイド線
+            referenceLines.forEach(ref => {
+                svg.append('line')
+                    .attr('x1', x(ref.percentile))
+                    .attr('x2', x(ref.percentile))
+                    .attr('y1', -35)
+                    .attr('y2', chartHeight)
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 2)
+                    .attr('opacity', 0.2);
+            });
+            // 区切り線（破線左）
+            svg.selectAll('.separator-line-left')
+                .data(percentileMetrics.slice(0, -1))
+                .enter()
+                .append('line')
+                .attr('class', 'separator-line-left')
+                .attr('x1', -65)
+                .attr('x2', -5)
+                .attr('y1', d => y(d.label) + barHeight + 3)
+                .attr('y2', d => y(d.label) + barHeight + 3)
+                .attr('stroke', '#398993')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '4,4');
+
+            // 区切り線（破線右）
+            svg.selectAll('.separator-line-right')
+                .data(percentileMetrics.slice(0, -1))
+                .enter()
+                .append('line')
+                .attr('class', 'separator-line-right')
+                .attr('x1', width + 5)
+                .attr('x2', width + 45)
+                .attr('y1', d => y(d.label) + barHeight + 3)
+                .attr('y2', d => y(d.label) + barHeight + 3)
+                .attr('stroke', '#398993')
+                .attr('stroke-width', 1)
+                .attr('stroke-dasharray', '4,4');
+
+            // ラベル（左側）
+            svg.selectAll('.metric-label')
+                .data(percentileMetrics)
+                .enter()
+                .append('text')
+                .attr('class', 'metric-label')
+                .attr('x', -5)
+                .attr('y', d => y(d.label) + barHeight / 2 + 1)
+                .attr('text-anchor', 'end')
+                .attr('dominant-baseline', 'middle')
+                .style('font-family', 'Roboto Condensed, sans-serif')
+                .style('font-size', '11px')
+                .style('fill', "#666")
+                .style('font-weight', '400')
+                .text(d => d.label);
+
+            // パーセンタイル値（円の中）- PA >= 240の場合のみ表示
+            if (!hasLowPA) {
+                const circles = svg.selectAll('.percentile-circle')
+                    .data(percentileMetrics)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'percentile-circle');
+
+                circles.append('circle')
+                    .attr('cx', d => x(d.percentileValue))
+                    .attr('cy', d => y(d.label) + barHeight / 2)
+                    .attr('r', barHeight/2)
+                    .attr('fill', d => getColor(d.percentileValue))
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 2);
+
+                circles.append('text')
+                    .attr('x', d => x(d.percentileValue))
+                    .attr('y', d => y(d.label) + barHeight / 2 + 1)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .style('font-family', 'Roboto Condensed, sans-serif')
+                    .style('font-size', '11.5px')
+                    .style('font-weight', 'bold')
+                    .style('fill', 'white')
+                    .text(d => Math.round(d.percentileValue));
+            }
+
+            // 実際の値（右側）
+            svg.selectAll('.actual-value')
+                .data(percentileMetrics)
+                .enter()
+                .append('text')
+                .attr('class', 'actual-value')
+                .attr('x', width + 40)
+                .attr('y', d => y(d.label) + barHeight / 2 + 1.5)
+                .attr('text-anchor', 'end')
+                .attr('dominant-baseline', 'middle')
+                .style('font-family', 'Roboto Condensed, sans-serif')
+                .style('font-size', '12px')
+                .style('fill', "#666")
+                .style('font-weight', '400')
+                .text(d => {
+                    // wRC+は小数点なし、wRAAとwRCは小数点1桁、その他は小数点3桁
+                    if (d.label === 'wRC+') {
+                        return Math.round(d.value);
+                    } else if (d.label === 'wRAA' || d.label === 'wRC') {
+                        return d.value.toFixed(1);
+                    }
+                    return d.value.toFixed(3);
+                });
+
+            console.log('Baseball Savant-style chart rendered successfully!');
+        }
+
+        // データを読み込む
+        d3.json('barchart_sample_data.json').then(allData => {
+            allPlayersData = allData;
+
+            // ユニークなチームリストを作成
+            const teams = [...new Set(allData.map(player => player.Team))].sort();
+
+            // チーム選択プルダウンを設定
+            const teamSelect = d3.select('#team-select');
+            teamSelect.selectAll('option').remove();
+
+            teamSelect.append('option')
+                .attr('value', '')
+                .text('チームを選択してください');
+
+            teams.forEach(team => {
+                teamSelect.append('option')
+                    .attr('value', team)
+                    .text(team);
+            });
+
+            const playerSelect = d3.select('#player-select');
+
+            // チーム選択時のイベント
+            teamSelect.on('change', function() {
+                const selectedTeam = this.value;
+
+                // 選手プルダウンをクリア
+                playerSelect.selectAll('option').remove();
+
+                if (selectedTeam === '') {
+                    playerSelect.append('option')
+                        .attr('value', '')
+                        .text('チームを選択してください');
+                    d3.select('#chart').selectAll('*').remove();
+                    return;
+                }
+
+                // 選択されたチームの選手をフィルタリングし、PAの降順でソート
+                const teamPlayers = allData
+                    .filter(player => player.Team === selectedTeam)
+                    .sort((a, b) => b.PA - a.PA);
+
+                playerSelect.append('option')
+                    .attr('value', '')
+                    .text('選手を選択してください');
+
+                teamPlayers.forEach((player, index) => {
+                    playerSelect.append('option')
+                        .attr('value', allData.indexOf(player))
+                        .text(player.Name);
+                });
+
+                // チャートをクリア
+                d3.select('#chart').selectAll('*').remove();
+            });
+
+            // 選手選択時のイベント
+            playerSelect.on('change', function() {
+                const selectedIndex = this.value;
+                if (selectedIndex !== '') {
+                    drawChart(allData[selectedIndex]);
+                } else {
+                    d3.select('#chart').selectAll('*').remove();
+                }
+            });
+        }).catch(error => {
+            console.error('Error loading data:', error);
+        });
+    </script>
+</body>
+</html>
