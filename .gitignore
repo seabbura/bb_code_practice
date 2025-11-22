@@ -51,6 +51,9 @@ ipython_config.py
 # *.json
 # *.parquet
 
+# Data storage
+data_storage/
+
 # Virtual environments
 venv/
 ENV/
